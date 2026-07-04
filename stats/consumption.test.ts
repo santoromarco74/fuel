@@ -57,3 +57,18 @@ const spend = monthlySpend(refuels);
 // gen: 72 + 19 = 91 ; feb: 63 + 60 = 123 (il cancellato è escluso)
 assert('spesa gennaio', spend[0], { month: '2026-01', total: 91 });
 assert('spesa febbraio', spend[1], { month: '2026-02', total: 123 });
+
+// ---- Partizione per veicolo (come "partition by vehicle_id" in SQL) ----
+// I pieni di v2 hanno odometri più bassi di quelli di v1: senza
+// partizione verrebbero accoppiati in sequenza globale, creando un
+// segmento fantasma v2->v1 (4 segmenti invece di 3).
+const v2: Refuel[] = [
+  mk({ id: 'e', vehicle_id: 'v2', odometer_km: 5000, liters: 38, price_per_liter: 1.7, is_full_tank: true, refueled_at: '2026-01-10T08:00:00Z' }),
+  mk({ id: 'f', vehicle_id: 'v2', odometer_km: 5400, liters: 20, price_per_liter: 1.7, is_full_tank: true, refueled_at: '2026-01-25T08:00:00Z' }),
+];
+const mixed = computeSegments([...refuels, ...v2]);
+assert('mix due veicoli: nessun segmento incrociato', mixed.length, 3);
+const segV2 = mixed.filter((s) => s.vehicle_id === 'v2');
+assert('mix due veicoli: segmento di v2 corretto',
+  [segV2.length, segV2[0]?.distance_km, segV2[0]?.liters_consumed],
+  [1, 400, 20]);
