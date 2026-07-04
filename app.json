@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "FuelTracker",
+    "slug": "fueltracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "fueltracker",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.santoromarco.fueltracker"
+    },
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
+  }
+}
