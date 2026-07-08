@@ -9,6 +9,8 @@
 //      - delete  -> update di deleted_at (soft delete)
 //      Al primo errore si FERMA: l'ordine va preservato (un update
 //      non può scavalcare l'insert fallito dello stesso record).
+//      Il PULL viene comunque eseguito: un item bloccato non deve
+//      impedire la ricezione dei dati degli altri record.
 //   2. PULL: scarica i record con updated_at >= last_pulled_at
 //      (deleted inclusi) e li applica in locale con upsert.
 //      I record che hanno ancora operazioni in coda vengono
@@ -131,14 +133,23 @@ async function pullTable(
       if (skip.has(r.id)) continue;
 
       const cols = Object.keys(r).filter((k) => k !== 'total_cost' || table === 'refuels');
-      // upsert locale: INSERT OR REPLACE ricostruisce la riga intera
+      // upsert locale con ON CONFLICT DO UPDATE, non INSERT OR REPLACE:
+      // REPLACE cancella e reinserisce la riga, e con le FK attive è
+      // fragile — se refuels adottasse ON DELETE CASCADE (come già su
+      // Postgres) il pull di un veicolo cancellerebbe i suoi
+      // rifornimenti locali. DO UPDATE aggiorna sul posto.
       const placeholders = cols.map(() => '?').join(',');
+      const updates = cols
+        .filter((k) => k !== 'id')
+        .map((k) => `${k} = excluded.${k}`)
+        .join(', ');
       const values = cols.map((k) =>
         typeof r[k] === 'boolean' ? (r[k] ? 1 : 0) : r[k]
       );
       await db.runAsync(
-        `INSERT OR REPLACE INTO ${table} (${cols.join(',')})
-         VALUES (${placeholders})`,
+        `INSERT INTO ${table} (${cols.join(',')})
+         VALUES (${placeholders})
+         ON CONFLICT(id) DO UPDATE SET ${updates}`,
         ...values
       );
     }
@@ -164,11 +175,12 @@ export async function syncNow(
     // 1. push prima del pull: la coda vuota elimina i conflitti
     const push = await pushQueue(db, supabase);
     pushed = push.pushed;
-    if (push.error) {
-      return { ok: false, pushed, pulled, error: push.error };
-    }
 
-    // 2. pull incrementale
+    // 2. pull incrementale. Si esegue ANCHE se il push si è fermato:
+    //    i record con operazioni ancora in coda vengono comunque
+    //    saltati dal pull (le modifiche locali vincono), quindi un
+    //    item bloccato non impedisce la ricezione di tutto il resto.
+    //    L'eventuale errore di push viene riportato in fondo.
     const state = await db.getFirstAsync<{ last_pulled_at: string | null }>(
       `SELECT last_pulled_at FROM sync_state WHERE id = 1`
     );
@@ -193,6 +205,9 @@ export async function syncNow(
       );
     }
 
+    if (push.error) {
+      return { ok: false, pushed, pulled, error: push.error };
+    }
     return { ok: true, pushed, pulled };
   } catch (e) {
     return {
@@ -237,4 +252,16 @@ export async function listStuckItems(db: SQLiteDatabase) {
     `SELECT * FROM sync_queue WHERE attempts >= ? ORDER BY id ASC`,
     MAX_ATTEMPTS
   );
+}
+
+/**
+ * Scarta un item bloccato dalla coda. Da chiamare SOLO su decisione
+ * esplicita dell'utente (dalla UI degli item bloccati): il dato locale
+ * resta com'è, ma la sua operazione non verrà mai pushata al server.
+ */
+export async function discardStuckItem(
+  db: SQLiteDatabase,
+  queueId: number
+): Promise<void> {
+  await db.runAsync(`DELETE FROM sync_queue WHERE id = ?`, queueId);
 }

@@ -19,3 +19,7 @@ export function registerSyncTriggers(): () => void {
 export async function listStuckItems(): Promise<never[]> {
   return [];
 }
+
+export async function discardStuckItem(): Promise<void> {
+  // niente coda sul web: nulla da scartare
+}

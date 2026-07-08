@@ -41,7 +41,7 @@ Android offline-first + web di consultazione. Backend Supabase.
 ## Test (eseguire dopo ogni modifica alle aree relative)
 
 ```bash
-npx tsx stats/consumption.test.ts     # logica consumi (14 assert)
+npx tsx stats/consumption.test.ts     # logica consumi (16 assert)
 npx tsx import/pipeline.test.ts       # pipeline import (21 assert)
 ```
 
@@ -75,6 +75,5 @@ end-to-end su dispositivo.
 - `schema.sql` da eseguire nel SQL Editor di Supabase
 - variabili `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`,
   `EXPO_PUBLIC_GOOGLE_CLIENT_ID`
-- `"scheme": "fueltracker"` in app.json
 - Google Cloud Console per il backup Drive (client ID Android + SHA-1
   da `eas credentials`); in modalità testing il refresh token dura 7 giorni

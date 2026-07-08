@@ -19,6 +19,8 @@ const round = (n: number, d: number) => {
 /**
  * Segmenti di consumo tra pieni consecutivi.
  * Come nella vista SQL:
+ *  - i pieni si accoppiano PER VEICOLO (partition by vehicle_id):
+ *    mai un segmento tra veicoli diversi
  *  - si ordina per ODOMETRO (non per data): un inserimento
  *    retroattivo non rompe i calcoli
  *  - i litri del segmento sommano TUTTI i rifornimenti
@@ -30,36 +32,46 @@ export function computeSegments(refuels: Refuel[]): ConsumptionSegment[] {
     .filter((r) => r.deleted_at === null)
     .sort((a, b) => a.odometer_km - b.odometer_km);
 
-  const fullTanks = active.filter((r) => r.is_full_tank);
+  // equivalente del "partition by vehicle_id" della vista
+  const byVehicle = new Map<string, Refuel[]>();
+  for (const r of active) {
+    const list = byVehicle.get(r.vehicle_id);
+    if (list) list.push(r);
+    else byVehicle.set(r.vehicle_id, [r]);
+  }
+
   const segments: ConsumptionSegment[] = [];
 
-  for (let i = 1; i < fullTanks.length; i++) {
-    const prev = fullTanks[i - 1];
-    const curr = fullTanks[i];
-    const distance = curr.odometer_km - prev.odometer_km;
-    if (distance <= 0) continue;
+  for (const vehicleRefuels of byVehicle.values()) {
+    const fullTanks = vehicleRefuels.filter((r) => r.is_full_tank);
 
-    const inSegment = active.filter(
-      (r) =>
-        r.vehicle_id === curr.vehicle_id &&
-        r.odometer_km > prev.odometer_km &&
-        r.odometer_km <= curr.odometer_km
-    );
-    const liters = inSegment.reduce((s, r) => s + r.liters, 0);
-    const cost = inSegment.reduce((s, r) => s + r.total_cost, 0);
+    for (let i = 1; i < fullTanks.length; i++) {
+      const prev = fullTanks[i - 1];
+      const curr = fullTanks[i];
+      const distance = curr.odometer_km - prev.odometer_km;
+      if (distance <= 0) continue;
 
-    segments.push({
-      id: curr.id,
-      user_id: curr.user_id,
-      vehicle_id: curr.vehicle_id,
-      refueled_at: curr.refueled_at,
-      odometer_km: curr.odometer_km,
-      distance_km: distance,
-      liters_consumed: round(liters, 2),
-      km_per_liter: liters > 0 ? round(distance / liters, 2) : null,
-      liters_per_100km: distance > 0 ? round((liters * 100) / distance, 2) : null,
-      cost_per_km: distance > 0 ? round(cost / distance, 3) : null,
-    });
+      const inSegment = vehicleRefuels.filter(
+        (r) =>
+          r.odometer_km > prev.odometer_km &&
+          r.odometer_km <= curr.odometer_km
+      );
+      const liters = inSegment.reduce((s, r) => s + r.liters, 0);
+      const cost = inSegment.reduce((s, r) => s + r.total_cost, 0);
+
+      segments.push({
+        id: curr.id,
+        user_id: curr.user_id,
+        vehicle_id: curr.vehicle_id,
+        refueled_at: curr.refueled_at,
+        odometer_km: curr.odometer_km,
+        distance_km: distance,
+        liters_consumed: round(liters, 2),
+        km_per_liter: liters > 0 ? round(distance / liters, 2) : null,
+        liters_per_100km: distance > 0 ? round((liters * 100) / distance, 2) : null,
+        cost_per_km: distance > 0 ? round(cost / distance, 3) : null,
+      });
+    }
   }
   return segments;
 }
