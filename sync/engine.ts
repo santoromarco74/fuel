@@ -228,7 +228,14 @@ export function registerSyncTriggers(
   supabase: SupabaseClient,
   onResult?: (r: SyncResult) => void
 ): () => void {
-  const run = () => syncNow(db, supabase).then((r) => onResult?.(r));
+  // syncNow non rigetta (converte gli errori in SyncResult), ma onResult
+  // è codice del chiamante: il catch evita rejection non gestite nei
+  // listener di NetInfo/AppState, che non possono attendere la promise
+  const run = (): void => {
+    syncNow(db, supabase)
+      .then((r) => onResult?.(r))
+      .catch((e) => console.warn('[sync] trigger fallito:', e));
+  };
 
   const unsubNet = NetInfo.addEventListener((state) => {
     if (state.isConnected && state.isInternetReachable !== false) run();

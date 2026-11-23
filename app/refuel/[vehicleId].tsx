@@ -29,15 +29,20 @@ export default function RefuelHistoryScreen() {
   const db = useDb();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [refuels, setRefuels] = useState<Refuel[]>([]);
+  const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
     if (!vehicleId) return;
     setVehicle(await getVehicle(db, vehicleId));
     setRefuels(await listRefuels(db, vehicleId));
+    setLoadError(false);
   }, [db, vehicleId]);
 
   // ricarica al ritorno dalla schermata di modifica
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  // su web le letture vanno in rete: un fallimento si mostra, non si perde
+  useFocusEffect(useCallback(() => {
+    load().catch(() => setLoadError(true));
+  }, [load]));
 
   return (
     <View style={s.flex}>
@@ -46,7 +51,14 @@ export default function RefuelHistoryScreen() {
         keyExtractor={(r) => r.id}
         contentContainerStyle={s.list}
         ListHeaderComponent={
-          vehicle ? <Text style={s.vehicleName}>{vehicle.name}</Text> : null
+          <>
+            {vehicle && <Text style={s.vehicleName}>{vehicle.name}</Text>}
+            {loadError && (
+              <Text style={s.loadError}>
+                Impossibile caricare i rifornimenti. Riprova più tardi.
+              </Text>
+            )}
+          </>
         }
         ListEmptyComponent={
           <View style={s.emptyBox}>
@@ -97,6 +109,7 @@ const s = StyleSheet.create({
   flex: { flex: 1, backgroundColor: c.bg },
   list: { padding: 20, gap: 8, paddingBottom: 120 },
   vehicleName: { fontSize: 13, fontWeight: '600', color: c.muted, marginBottom: 4 },
+  loadError: { fontSize: 13, color: c.warning, marginBottom: 4 },
   emptyBox: { alignItems: 'center', paddingVertical: 48, gap: 8 },
   emptyTitle: { fontSize: 18, fontWeight: '600', color: c.text },
   emptyText: { fontSize: 14, color: c.muted, textAlign: 'center', paddingHorizontal: 24 },

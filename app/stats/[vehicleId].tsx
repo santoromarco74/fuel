@@ -119,7 +119,10 @@ export default function VehicleStatsScreen() {
   const [refuels, setRefuels] = useState<Refuel[]>([]);
 
   useEffect(() => {
-    if (vehicleId) listRefuels(db, vehicleId).then(setRefuels);
+    if (!vehicleId) return;
+    // lettura fallita (es. rete assente sul web): grafici vuoti con il
+    // loro messaggio, invece di una promise rifiutata senza gestore
+    listRefuels(db, vehicleId).then(setRefuels).catch(() => setRefuels([]));
   }, [db, vehicleId]);
 
   const segments = useMemo(() => computeSegments(refuels), [refuels]);

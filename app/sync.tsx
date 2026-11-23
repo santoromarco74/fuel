@@ -47,7 +47,9 @@ export default function SyncScreen() {
     setStuck(await listStuckItems(db as never));
   }, [db]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(useCallback(() => {
+    load().catch((e) => console.warn('[sync] lettura coda fallita:', e));
+  }, [load]));
 
   const retry = async () => {
     setBusy(true);
@@ -71,6 +73,10 @@ export default function SyncScreen() {
   };
 
   const healthy = stuck.length === 0;
+  const opsLabel = pending === 1 ? 'operazione' : 'operazioni';
+  const stateText = pending === 0
+    ? 'Tutto sincronizzato.'
+    : `${pending} ${opsLabel} in coda.`;
 
   return (
     <FlatList
@@ -82,9 +88,7 @@ export default function SyncScreen() {
       ListHeaderComponent={
         <View style={s.header}>
           <Text style={s.stateLine}>
-            {pending === 0
-              ? 'Tutto sincronizzato.'
-              : `${pending} ${pending === 1 ? 'operazione' : 'operazioni'} in coda.`}
+            {stateText}
           </Text>
           {lastResult && !lastResult.ok && (
             <Text style={s.errorLine}>Ultimo tentativo: {lastResult.error}</Text>

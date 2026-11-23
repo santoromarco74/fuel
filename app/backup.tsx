@@ -29,6 +29,12 @@ import { validate, commit } from '../import/pipeline';
 import { makeImportWriter } from '../import/writer';
 import { confirmAsync } from '../lib/confirm';
 
+function describeFailure(reason: string, detail?: string): string {
+  if (reason === 'not_connected') return 'Google Drive non collegato.';
+  const extra = detail ? `: ${detail}` : '';
+  return `Backup non riuscito (${reason}${extra}).`;
+}
+
 const fmtDateTime = (iso: string) => {
   const [y, m, d] = iso.slice(0, 10).split('-');
   return `${d}/${m}/${y} ${iso.slice(11, 16)}`;
@@ -58,7 +64,8 @@ export default function BackupScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => {
-    if (DRIVE_SUPPORTED) load();
+    if (!DRIVE_SUPPORTED) return;
+    load().catch(() => setStatus('Impossibile leggere lo stato del backup.'));
   }, [load]));
 
   const connect = async () => {
@@ -99,11 +106,7 @@ export default function BackupScreen() {
       if (outcome.ok) {
         setStatus(`Backup completato: ${outcome.fileName}`);
       } else {
-        setStatus(
-          outcome.reason === 'not_connected'
-            ? 'Google Drive non collegato.'
-            : `Backup non riuscito (${outcome.reason}${outcome.detail ? `: ${outcome.detail}` : ''}).`
-        );
+        setStatus(describeFailure(outcome.reason, outcome.detail));
       }
       await load();
     } finally {

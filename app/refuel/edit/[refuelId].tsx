@@ -43,7 +43,7 @@ export default function EditRefuelScreen() {
 
   useEffect(() => {
     if (!refuelId) return;
-    (async () => {
+    const load = async () => {
       const r = await getRefuel(db, refuelId);
       if (!r) { setError('Rifornimento non trovato.'); return; }
       setOriginal(r);
@@ -51,7 +51,10 @@ export default function EditRefuelScreen() {
       setLiters(String(r.liters).replace('.', ','));
       setPricePerLiter(String(r.price_per_liter).replace('.', ','));
       setIsFullTank(r.is_full_tank);
-    })();
+    };
+    // su web getRefuel va in rete e può fallire: errore visibile, non
+    // una promise rifiutata senza gestore
+    load().catch(() => setError('Impossibile caricare il rifornimento.'));
   }, [db, refuelId]);
 
   const odoNum = parseNum(odometer);

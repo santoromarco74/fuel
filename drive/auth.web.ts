@@ -10,7 +10,9 @@ export async function connectDrive(): Promise<boolean> {
   return false;
 }
 
-export async function disconnectDrive(): Promise<void> {}
+export async function disconnectDrive(): Promise<void> {
+  // nessun token salvato sul web: niente da rimuovere
+}
 
 export async function isDriveConnected(): Promise<boolean> {
   return false;
