@@ -31,6 +31,9 @@ export type BackupOutcome =
   | { ok: true; fileName: string }
   | { ok: false; reason: 'not_connected' | 'network' | 'api'; detail?: string };
 
+/** Il backup Drive esiste solo su Android (false in backup.web.ts). */
+export const DRIVE_SUPPORTED = true;
+
 // ---------- helpers HTTP ----------
 
 async function driveFetch(
@@ -183,6 +186,11 @@ export async function backupIfDue(
   }
   const { vehicles, refuels } = await loadData();
   return backupNow(vehicles, refuels);
+}
+
+/** Data ISO dell'ultimo backup riuscito, o null. */
+export async function getLastBackupAt(): Promise<string | null> {
+  return AsyncStorage.getItem(KEY_LAST_BACKUP);
 }
 
 /** Elenco backup disponibili (per la schermata di restore). */

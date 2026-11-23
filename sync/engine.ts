@@ -248,7 +248,9 @@ export function registerSyncTriggers(
 
 /** Item bloccati da mostrare in UI (attempts esauriti). */
 export async function listStuckItems(db: SQLiteDatabase) {
-  return db.getAllAsync<QueueRow & { last_error: string | null }>(
+  return db.getAllAsync<
+    QueueRow & { last_error: string | null; created_at: string }
+  >(
     `SELECT * FROM sync_queue WHERE attempts >= ? ORDER BY id ASC`,
     MAX_ATTEMPTS
   );

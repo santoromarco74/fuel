@@ -81,8 +81,13 @@ export default function RootLayout() {
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="index" options={{ title: 'FuelTracker' }} />
           <Stack.Screen name="refuel/new" options={{ title: 'Nuovo rifornimento' }} />
+          <Stack.Screen name="refuel/[vehicleId]" options={{ title: 'Storico rifornimenti' }} />
+          <Stack.Screen name="refuel/edit/[refuelId]" options={{ title: 'Modifica rifornimento' }} />
           <Stack.Screen name="vehicle/new" options={{ title: 'Nuovo veicolo' }} />
           <Stack.Screen name="stats/[vehicleId]" options={{ title: 'Statistiche' }} />
+          <Stack.Screen name="sync" options={{ title: 'Sincronizzazione' }} />
+          <Stack.Screen name="import/index" options={{ title: 'Importa dati' }} />
+          <Stack.Screen name="backup" options={{ title: 'Backup Google Drive' }} />
         </Stack>
       </AuthGate>
     </DbProvider>

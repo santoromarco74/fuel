@@ -50,6 +50,16 @@ export async function listVehicles(db: SQLiteDatabase): Promise<Vehicle[]> {
   );
 }
 
+export async function getVehicle(
+  db: SQLiteDatabase,
+  id: string
+): Promise<Vehicle | null> {
+  const row = await db.getFirstAsync<Vehicle>(
+    `SELECT * FROM vehicles WHERE id = ?`, id
+  );
+  return row ?? null;
+}
+
 export async function insertVehicle(
   db: SQLiteDatabase,
   input: Omit<VehicleInsert, 'id'> & { id?: string },
@@ -145,6 +155,16 @@ export async function listRefuels(
     vehicleId
   );
   return rows.map(refuelFromSqlite);
+}
+
+export async function getRefuel(
+  db: SQLiteDatabase,
+  id: string
+): Promise<Refuel | null> {
+  const row = await db.getFirstAsync<RefuelRowSqlite>(
+    `SELECT * FROM refuels WHERE id = ?`, id
+  );
+  return row ? refuelFromSqlite(row) : null;
 }
 
 export async function insertRefuel(

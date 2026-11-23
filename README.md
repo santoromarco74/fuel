@@ -21,21 +21,29 @@ import/
   pipeline.ts              # validate/commit + Writer astratto
   genericCsv.ts            # profilo CSV generico con mappatura colonne
   backup.ts                # formato backup JSON + profilo restore
+  writer.ts                # Writer concreto sopra db/dal (split via Metro)
   pipeline.test.ts         # 21 verifiche end-to-end
 drive/
-  auth.ts                  # OAuth Google PKCE (solo Android)
-  backup.ts                # upload/list/restore su Drive + rotazione (10)
+  auth.ts / auth.web.ts    # OAuth Google PKCE (no-op sul web)
+  backup.ts / backup.web.ts# upload/list/restore su Drive (no-op sul web)
 auth/
   useSession.ts            # sessione Supabase + userId per il DAL
 lib/
   supabase.ts              # client condiviso (storage per piattaforma)
+  confirm.ts / .web.ts     # conferma modale (Alert / window.confirm)
+  readFile.ts / .web.ts    # lettura file di testo (FS / fetch blob)
 app/
   _layout.tsx              # root: DbProvider + auth gate + trigger di sync
   index.tsx                # home: lista veicoli + stato sync
   login.tsx                # login email/password Supabase
   vehicle/new.tsx          # nuovo veicolo
   refuel/new.tsx           # inserimento rifornimento
+  refuel/[vehicleId].tsx   # storico rifornimenti del veicolo
+  refuel/edit/[refuelId].tsx # modifica/cancellazione rifornimento
   stats/[vehicleId].tsx    # statistiche + grafici SVG
+  sync.tsx                 # stato sync + item bloccati (scarta/riprova)
+  import/index.tsx         # import CSV/backup: mappatura + anteprima
+  backup.tsx               # impostazioni backup Google Drive
 ```
 
 ## Setup
@@ -59,15 +67,10 @@ npm start         # expo start
 
 ## Pezzi ancora aperti
 
-- Storico rifornimenti e UI import (mappatura colonne + anteprima)
-- Writer d'import concreti: sono ~20 righe ciascuno sopra il DAL
-  (l'interfaccia è `ImportWriter` in `import/pipeline.ts`)
-- UI per gli item di sync bloccati (`listStuckItems` / `discardStuckItem`
-  in `sync/engine.ts`)
-- Schermata impostazioni backup
 - Profili Fuelio e Drivvo: servono export reali per scrivere i parser
+  (nel frattempo i loro CSV passano dal profilo generico con mappatura)
 - Backup Drive lato web: fuori scope per scelta (il web legge da Supabase)
-- Primo test end-to-end su dispositivo
+- Modifica/cancellazione veicoli dalla UI (il DAL le supporta già)
 
 ## Test
 
