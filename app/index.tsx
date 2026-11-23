@@ -56,9 +56,11 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={
           pending > 0 ? (
-            <Text style={s.pending}>
-              {pending} {pending === 1 ? 'operazione' : 'operazioni'} in attesa di sincronizzazione
-            </Text>
+            <Pressable onPress={() => router.push('/sync')}>
+              <Text style={s.pending}>
+                {pending} {pending === 1 ? 'operazione' : 'operazioni'} in attesa di sincronizzazione ›
+              </Text>
+            </Pressable>
           ) : null
         }
         ListEmptyComponent={
@@ -85,9 +87,17 @@ export default function HomeScreen() {
           </Pressable>
         )}
         ListFooterComponent={
-          <Pressable style={s.addVehicle} onPress={() => router.push('/vehicle/new')}>
-            <Text style={s.addVehicleText}>+ Aggiungi veicolo</Text>
-          </Pressable>
+          <View>
+            <Pressable style={s.addVehicle} onPress={() => router.push('/vehicle/new')}>
+              <Text style={s.addVehicleText}>+ Aggiungi veicolo</Text>
+            </Pressable>
+            <Pressable style={s.footerLink} onPress={() => router.push('/import')}>
+              <Text style={s.footerLinkText}>Importa dati</Text>
+            </Pressable>
+            <Pressable style={s.footerLink} onPress={() => router.push('/backup')}>
+              <Text style={s.footerLinkText}>Backup Google Drive</Text>
+            </Pressable>
+          </View>
         }
       />
 
@@ -127,6 +137,8 @@ const s = StyleSheet.create({
   cardChevron: { fontSize: 26, color: c.muted },
   addVehicle: { paddingVertical: 14, alignItems: 'center' },
   addVehicleText: { color: c.accent, fontSize: 15, fontWeight: '600' },
+  footerLink: { paddingVertical: 10, alignItems: 'center' },
+  footerLinkText: { color: c.muted, fontSize: 14, fontWeight: '600' },
   fab: {
     position: 'absolute', bottom: 24, left: 20, right: 20,
     backgroundColor: c.accent, borderRadius: 14,

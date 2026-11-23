@@ -12,10 +12,10 @@
 // stats/consumption.ts.
 // ============================================================
 
-import { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { View, Text, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import Svg, { Polyline, Line, Rect, Circle, Text as SvgText } from 'react-native-svg';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useDb } from '../../db/DbProvider';
 import { listRefuels } from '../../db/dal';
 import { computeSegments, computeStats, monthlySpend } from '../../stats/consumption';
@@ -81,7 +81,9 @@ function BarChart({ data, width, height }: {
         const bx = pad.left + i * slot + (slot - barW) / 2;
         const by = pad.top + h - bh;
         return (
-          <View key={d.month}>
+          // Fragment, non View: dentro <Svg> sono validi solo
+          // elementi SVG (una View qui rompe il render su Android)
+          <Fragment key={d.month}>
             <Rect x={bx} y={by} width={barW} height={bh} rx={4} fill={c.accent} />
             <SvgText x={bx + barW / 2} y={by - 4} fontSize={10}
               fill={c.muted} textAnchor="middle">
@@ -91,7 +93,7 @@ function BarChart({ data, width, height }: {
               fill={c.muted} textAnchor="middle">
               {d.month.slice(5)}{/* "07" */}
             </SvgText>
-          </View>
+          </Fragment>
         );
       })}
     </Svg>
@@ -117,7 +119,10 @@ export default function VehicleStatsScreen() {
   const [refuels, setRefuels] = useState<Refuel[]>([]);
 
   useEffect(() => {
-    if (vehicleId) listRefuels(db, vehicleId).then(setRefuels);
+    if (!vehicleId) return;
+    // lettura fallita (es. rete assente sul web): grafici vuoti con il
+    // loro messaggio, invece di una promise rifiutata senza gestore
+    listRefuels(db, vehicleId).then(setRefuels).catch(() => setRefuels([]));
   }, [db, vehicleId]);
 
   const segments = useMemo(() => computeSegments(refuels), [refuels]);
@@ -151,6 +156,13 @@ export default function VehicleStatsScreen() {
         {stats.segmentCount} tratte misurate · {fmt(stats.totalDistanceKm)} km ·{' '}
         {fmt(stats.totalLiters)} l · {fmt(stats.totalCost)} €
       </Text>
+
+      <Pressable
+        style={s.historyLink}
+        onPress={() => router.push(`/refuel/${vehicleId}`)}
+      >
+        <Text style={s.historyLinkText}>Storico rifornimenti ›</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -188,4 +200,6 @@ const s = StyleSheet.create({
   empty: { alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: c.muted, fontSize: 14, textAlign: 'center', paddingHorizontal: 24 },
   footnote: { fontSize: 12, color: c.muted, marginTop: 8 },
+  historyLink: { paddingVertical: 12, alignItems: 'center' },
+  historyLinkText: { color: c.accent, fontSize: 15, fontWeight: '600' },
 });

@@ -32,6 +32,15 @@ export async function listVehicles(_db: AnyDb): Promise<Vehicle[]> {
   return data ?? [];
 }
 
+export async function getVehicle(
+  _db: AnyDb, id: string
+): Promise<Vehicle | null> {
+  const { data, error } = await supabase
+    .from('vehicles').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function insertVehicle(
   _db: AnyDb,
   input: Omit<VehicleInsert, 'id'> & { id?: string },
@@ -75,6 +84,15 @@ export async function listRefuels(
     .order('odometer_km', { ascending: false });
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+export async function getRefuel(
+  _db: AnyDb, id: string
+): Promise<Refuel | null> {
+  const { data, error } = await supabase
+    .from('refuels').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function insertRefuel(

@@ -61,14 +61,15 @@ npx tsx import/pipeline.test.ts       # pipeline import (21 assert)
 ## Stato del progetto
 
 Fatto: schema Supabase (RLS, trigger, vista), schema SQLite + DAL,
-schermate (login, home, nuovo veicolo, nuovo rifornimento, statistiche),
-sync engine, pipeline import + CSV generico + backup JSON, backup Google
-Drive (solo Android), layout root con auth gate.
+schermate (login, home, nuovo veicolo, nuovo rifornimento, statistiche,
+storico con modifica/cancellazione, stato sync con scarto item bloccati,
+import CSV/backup con mappatura e anteprima, impostazioni backup Drive),
+sync engine, pipeline import + writer concreto sopra il DAL, backup
+Google Drive (solo Android), layout root con auth gate, primo test
+end-to-end su dispositivo (dev build EAS).
 
-Da fare: UI import (mappatura colonne + anteprima), writer d'import
-concreti sopra il DAL, storico rifornimenti, schermata impostazioni
-backup, parser Fuelio e Drivvo (attendono export reali), primo test
-end-to-end su dispositivo.
+Da fare: parser Fuelio e Drivvo (attendono export reali), modifica e
+cancellazione veicoli dalla UI.
 
 ## Setup non ancora eseguito (vedi README.md per i dettagli)
 
